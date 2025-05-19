@@ -1,62 +1,94 @@
-﻿//=============================================================================
-//  Script Name:    PaletteFromSwatchGroup.jsx
-//  Description:    Builds a grid of swatches from a swatch group.
-//  Author:         Allister Petersen
-//  AI Co-Author:   OpenAI ChatGPT (April 2025)
+﻿﻿//=============================================================================
+//  Script Name:    PaletteFromSelectedSwatchGroup.jsx
+//  Description:    Builds a grid of swatches from the currently selected group.
+//  Author:         Cloudax Alexander
+//  AI Co-Author:   OpenAI ChatGPT (May 2025)
 //  Created:        2025-05-09
-//  Last Modified:  2025-05-09
-//  Version:        1.0.0
+//  Last Modified:  2025-05-19
+//  Version:        1.1.0
 //  Requirements:   Illustrator CC 2018+
 //  Note:           Drop into “Presets/en_US/Scripts” and restart Illustrator.
-//============================================================================
-(function() {
-  if (!app.documents.length || !app.activeDocument.swatchGroups.length) {
-    alert("Please open a document and make sure you have at least one Swatch Group.");
+//=============================================================================
+
+(function () {
+  "use strict";
+
+  //–– Preliminary checks ––
+  if (!app.documents.length) {
+    alert("No document open. Please open a document first.");
+    return;
+  }
+  var doc = app.activeDocument;
+  if (!doc.swatchGroups.length) {
+    alert("No Swatch Groups found in this document.");
     return;
   }
 
-  var doc    = app.activeDocument;
-  var groups = doc.swatchGroups;
-  var names  = [];
-  for (var i = 0; i < groups.length; i++) {
-    names.push(groups[i].name || ("Group " + (i+1)));
-  }
+  //–– Build the dialog ––
+  var dlg = new Window("dialog", "Palette From Swatch Group");
+  dlg.alignChildren = "fill";
 
-  // build picker dialog
-  var w = new Window("dialog", "Choose Color Group");
-  w.alignChildren = "fill";
-  w.add("statictext", undefined, "Select the Swatch Group to lay out:");
-  var dd = w.add("dropdownlist", undefined, names);
+  // 1) Select Swatch Group
+  dlg.add("statictext", undefined, "1. Select Swatch Group:");
+  var groupNames = [];
+  for (var i = 0; i < doc.swatchGroups.length; i++) {
+    var name = doc.swatchGroups[i].name;
+    groupNames.push(name ? name : ("Group " + (i+1)));
+  }
+  var dd = dlg.add("dropdownlist", undefined, groupNames);
   dd.selection = 0;
-  var btns = w.add("group");
+
+  // 2) Layout options
+  dlg.add("statictext", undefined, "2. Layout options (in points):");
+  var opts = dlg.add("group");
+  opts.orientation = "column";
+  var row1 = opts.add("group");
+  row1.add("statictext",undefined,"Square size:");
+  var sizeInput = row1.add("edittext", [0,0,60,20], "50");
+  row1.add("statictext",undefined,"pt");
+  var row2 = opts.add("group");
+  row2.add("statictext",undefined,"Spacing (margin):");
+  var marginInput = row2.add("edittext", [0,0,60,20], "20");
+  row2.add("statictext",undefined,"pt");
+  var row3 = opts.add("group");
+  row3.add("statictext",undefined,"Columns:");
+  var colsInput = row3.add("edittext", [0,0,60,20], "5");
+
+  // 3) Buttons
+  var btns = dlg.add("group");
   btns.alignment = "right";
   btns.add("button", undefined, "OK",     {name:"ok"});
   btns.add("button", undefined, "Cancel", {name:"cancel"});
 
-  if (w.show() !== 1) {
-    // user cancelled
-    w.close();
-    return;   // now valid, because we’re inside a function
+  //–– Show & bail on cancel ––
+  if (dlg.show() !== 1) {
+    dlg.close();
+    return;
   }
 
-  var group    = groups[dd.selection.index];
+  //–– Parse & validate inputs ––
+  var group    = doc.swatchGroups[dd.selection.index];
   var swatches = group.getAllSwatches();
+  var size     = parseFloat(sizeInput.text);
+  var margin   = parseFloat(marginInput.text);
+  var cols     = parseInt(colsInput.text, 10);
+  if (isNaN(size) || size <= 0 ||
+      isNaN(margin) || margin < 0 ||
+      isNaN(cols) || cols < 1) {
+    alert("Please enter valid numeric values:\n• size > 0\n• margin ≥ 0\n• columns ≥ 1");
+    return;
+  }
 
-  // layout parameters
-  var size   = 50;   // square size (pt)
-  var margin = 20;   // gap between squares (pt)
-  var cols   = 5;    // number of columns
-
-  // draw the grid
-  for (var i = 0; i < swatches.length; i++) {
-    var row = Math.floor(i/cols),
-        col = i % cols,
+  //–– Draw the grid ––
+  for (var j = 0; j < swatches.length; j++) {
+    var row = Math.floor(j/cols),
+        col = j % cols,
         x   = col*(size + margin),
         y   = -row*(size + margin);
     var rect = doc.pathItems.rectangle(y, x, size, size);
     rect.filled    = true;
     rect.stroked   = false;
-    rect.fillColor = swatches[i].color;
+    rect.fillColor = swatches[j].color;
   }
 
 })();
