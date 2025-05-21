@@ -3,11 +3,11 @@
 //  Description:    Builds a customizable card-style palette from the selected
 //                  swatch group. You can adjust the spacing between cards and
 //                  choose label/value fonts via editable, live-filtering ComboBoxes.
-//  Author:         Cloudax Alexander
+//  Author:         Allister Petersen
 //  AI Co-Author:   OpenAI ChatGPT (May 2025)
 //  Created:        2025-05-19
 //  Last Modified:  2025-05-30
-//  Version:        1.0.1
+//  Version:        1.9.0
 //  Requirements:   Illustrator CC 2018+
 //=============================================================================
 
